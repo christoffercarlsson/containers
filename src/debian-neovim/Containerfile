@@ -1,0 +1,29 @@
+FROM ghcr.io/christoffercarlsson/debian:latest AS builder
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        curl \
+        gettext \
+        git \
+        ninja-build
+
+RUN git clone --depth 1 --branch stable \
+        https://github.com/neovim/neovim /tmp/neovim \
+    && cd /tmp/neovim \
+    && make CMAKE_BUILD_TYPE=Release \
+    && make CMAKE_INSTALL_PREFIX=/tmp/nvim install
+
+FROM ghcr.io/christoffercarlsson/debian:latest
+
+COPY --from=builder /tmp/nvim /opt/nvim
+RUN ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim
+
+RUN nvim --version
+
+ENV EDITOR=nvim
+ENV VISUAL=nvim
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers

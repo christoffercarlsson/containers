@@ -1,7 +1,5 @@
 FROM debian:trixie-slim
 
-LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
-
 ARG LOCALE=en_US.UTF-8
 
 ENV LANG=C.UTF-8
@@ -20,3 +18,5 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 
 ENV LANG=${LOCALE}
 ENV LC_ALL=${LOCALE}
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
