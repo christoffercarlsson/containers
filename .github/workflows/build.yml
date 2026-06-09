@@ -22,12 +22,18 @@ jobs:
             path: src/debian
           - name: debian-neovim
             path: src/debian-neovim
+          - name: etherpad
+            path: src/etherpad
+          - name: excalidraw
+            path: src/excalidraw
           - name: lua-language-server
             path: src/lua-language-server
           - name: node
             path: src/node
           - name: open-webui
             path: src/open-webui
+          - name: postgres
+            path: src/postgres
           - name: radicale
             path: src/radicale
           - name: restic
