@@ -22,6 +22,8 @@ jobs:
             path: src/debian
           - name: debian-neovim
             path: src/debian-neovim
+          - name: lua-language-server
+            path: src/lua-language-server
           - name: node
             path: src/node
           - name: open-webui

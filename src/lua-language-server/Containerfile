@@ -1,0 +1,29 @@
+FROM ghcr.io/christoffercarlsson/debian:latest AS builder
+
+ARG LUALS_VERSION=3.18.2
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        ninja-build \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch "${LUALS_VERSION}" \
+        https://github.com/LuaLS/lua-language-server /tmp/lua-language-server \
+    && cd /tmp/lua-language-server \
+    && chmod +x ./make.sh \
+    && ./make.sh > /dev/null
+
+FROM ghcr.io/christoffercarlsson/debian:latest
+
+COPY --from=builder /tmp/lua-language-server /opt/lua-language-server
+COPY scripts/lua-language-server /usr/local/bin/lua-language-server
+
+RUN lua-language-server --version
+
+ENTRYPOINT ["/usr/local/bin/lua-language-server"]
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
