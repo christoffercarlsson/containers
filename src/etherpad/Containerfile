@@ -1,0 +1,5 @@
+FROM ghcr.io/ether/etherpad:latest
+
+ENV TRUST_PROXY=true
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
