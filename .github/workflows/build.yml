@@ -1,0 +1,54 @@
+name: Build and publish images to GitHub Container Registry
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  build:
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - name: caddy
+            path: src/caddy
+          - name: debian
+            path: src/debian
+          - name: debian-neovim
+            path: src/debian-neovim
+          - name: node
+            path: src/node
+          - name: open-webui
+            path: src/open-webui
+          - name: radicale
+            path: src/radicale
+          - name: restic
+            path: src/restic
+          - name: rust
+            path: src/rust
+          - name: searxng
+            path: src/searxng
+    uses: docker/github-builder/.github/workflows/build.yml@073833262a23a17675c95c4541ab063b7646756b
+    with:
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      context: ./${{ matrix.path }}
+      file: Containerfile
+      meta-images: ghcr.io/${{ github.actor }}/${{ matrix.name }}
+      meta-tags: |
+        type=raw,value=latest,enable={{is_default_branch}}
+        type=ref,event=branch
+        type=sha,prefix=,format=long
+        type=sha,prefix=,format=short
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
