@@ -1,0 +1,5 @@
+FROM ghcr.io/open-webui/open-webui:main
+
+ENV HF_HUB_OFFLINE=1
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
