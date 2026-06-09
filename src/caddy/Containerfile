@@ -1,0 +1,13 @@
+FROM caddy:builder AS builder
+
+RUN xcaddy build \
+    --with github.com/caddy-dns/cloudflare \
+    --with github.com/caddy-dns/domainnameshop \
+    --with github.com/caddy-dns/glesys \
+    --with github.com/caddy-dns/unifi
+
+FROM caddy:latest
+
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
