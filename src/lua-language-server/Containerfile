@@ -24,6 +24,6 @@ COPY scripts/lua-language-server /usr/local/bin/lua-language-server
 
 RUN lua-language-server --version
 
-ENTRYPOINT ["/usr/local/bin/lua-language-server"]
+ENTRYPOINT ["lua-language-server"]
 
 LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers

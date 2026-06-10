@@ -15,4 +15,6 @@ RUN node --version \
     && npm --version \
     && pnpm --version
 
+ENTRYPOINT ["node"]
+
 LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers
