@@ -1,4 +1,4 @@
-name: Build and publish images to GitHub Container Registry
+name: ci
 on:
   push:
     branches:
