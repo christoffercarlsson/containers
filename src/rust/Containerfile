@@ -4,7 +4,9 @@ ARG RUST_VERSION=1.96.0
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
-    && apt-get install -y --no-install-recommends rustup \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        rustup \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
