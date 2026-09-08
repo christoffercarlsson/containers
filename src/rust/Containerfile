@@ -1,6 +1,6 @@
 FROM ghcr.io/christoffercarlsson/debian:latest
 
-ARG RUST_VERSION=1.96.0
+ARG RUST_VERSION=1.98.1
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
