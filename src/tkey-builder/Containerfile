@@ -62,6 +62,7 @@ ARG YOSYS_COMMIT=9ed031ddd588442f22be13ce608547a5809b62f0
 ARG NEXTPNR_TAG=nextpnr-0.7
 ARG NEXTPNR_COMMIT=73b7de74a5769095acb96eb6c6333ffe161452f2
 ARG NEXTPNR_SEED_FIX=6ca64526bb18ace8690872b09ca1251567c116de
+ARG NEXTPNR_CXXFLAGS="-ffp-contract=off"
 ARG IVERILOG_TAG=v12_0
 ARG IVERILOG_COMMIT=4fd5291632232fbe1ba49b2c26bb6b2bf1c6c9cf
 ARG VERILATOR_TAG=v5.028
@@ -114,10 +115,13 @@ RUN git clone -b "${NEXTPNR_TAG}" https://github.com/YosysHQ/nextpnr /src/nextpn
     && sed -i \
         '244s/bool warn_on_failure = false/bool warn_on_failure = true/' \
         common/kernel/timing.h \
-    && cmake -DARCH=ice40 . \
+    && cmake -DARCH=ice40 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CXX_FLAGS="${NEXTPNR_CXXFLAGS}" . \
     && make -j"$(nproc)" \
     && make install \
-    && git describe --all --always --long --dirty > /usr/local/repo-commit-nextpnr
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-nextpnr \
+    && echo "${NEXTPNR_CXXFLAGS}" > /usr/local/repo-cxxflags-nextpnr
 
 RUN git clone -b "${IVERILOG_TAG}" --depth=1 https://github.com/steveicarus/iverilog /src/iverilog \
     && cd /src/iverilog \
