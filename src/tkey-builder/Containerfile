@@ -1,0 +1,173 @@
+FROM ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55 AS base
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        autoconf \
+        bison \
+        build-essential \
+        ca-certificates \
+        clang=1:18.0-59~exp2 \
+        clang-18=1:18.1.3-1ubuntu1 \
+        clang-format \
+        clang-tidy \
+        cmake \
+        curl \
+        flex \
+        g++ \
+        gawk \
+        gcc \
+        git \
+        golang-1.23 \
+        gperf \
+        graphviz \
+        help2man \
+        libboost-dev \
+        libboost-filesystem-dev \
+        libboost-iostreams-dev \
+        libboost-program-options-dev \
+        libboost-python-dev \
+        libboost-system-dev \
+        libboost-thread-dev \
+        libeigen3-dev \
+        libffi-dev \
+        libfl-dev \
+        libftdi-dev \
+        libpython3-dev \
+        libreadline-dev \
+        libusb-1.0-0-dev \
+        lld=1:18.0-59~exp2 \
+        lld-18=1:18.1.3-1ubuntu1 \
+        llvm=1:18.0-59~exp2 \
+        llvm-18=1:18.1.3-1ubuntu1 \
+        make \
+        perl \
+        pkg-config \
+        python-is-python3 \
+        python3 \
+        python3-dev \
+        python3-full \
+        python3-pip \
+        python3-pytest \
+        sdcc=4.2.0+dfsg-1 \
+        splint \
+        tcl-dev \
+        xdot \
+        zlib1g-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base AS toolsbuilder
+
+ARG ICESTORM_COMMIT=738af822905fdcf0466e9dd784b9ae4b0b34987f
+ARG YOSYS_TAG=0.45
+ARG YOSYS_COMMIT=9ed031ddd588442f22be13ce608547a5809b62f0
+ARG NEXTPNR_TAG=nextpnr-0.7
+ARG NEXTPNR_COMMIT=73b7de74a5769095acb96eb6c6333ffe161452f2
+ARG NEXTPNR_SEED_FIX=6ca64526bb18ace8690872b09ca1251567c116de
+ARG IVERILOG_TAG=v12_0
+ARG IVERILOG_COMMIT=4fd5291632232fbe1ba49b2c26bb6b2bf1c6c9cf
+ARG VERILATOR_TAG=v5.028
+ARG VERILATOR_COMMIT=8ca45df9c75c611989ae5bfc4112a32212c3dacf
+ARG VERIBLE_TAG=v0.0-3795-gf4d72375
+ARG VERIBLE_SHA512_AMD64=3e997b8cd494556fa107b96a6daa4e51133208a85b3c0250c0223d7194aedbc98b3f5213fedaee083edd96c317e50057aa9cdc0517197f4638be3834133e2c9f
+ARG VERIBLE_SHA512_ARM64=be867b02f2bc95fbeb410c16605bdd04e0d83931cb171aa9015293898eaa89d8771d0ce17049b9a14e17dc9f0fb9bc20bdd9234461e7c1c8441e6a3938f03110
+ARG COCOTB_TAG=v1.9.1
+
+RUN git clone https://github.com/YosysHQ/icestorm /src/icestorm \
+    && cd /src/icestorm \
+    && git checkout "${ICESTORM_COMMIT}" \
+    && make -j"$(nproc)" \
+    && make install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-icestorm
+
+RUN git clone -b interfaces --depth=1 https://github.com/tillitis/icestorm /src/icestorm-tillitis \
+    && cd /src/icestorm-tillitis/iceprog \
+    && make -j"$(nproc)" \
+    && make PROGRAM_PREFIX=tillitis- install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-tillitis--icestorm
+
+RUN git clone -b "${YOSYS_TAG}" https://github.com/YosysHQ/yosys /src/yosys \
+    && cd /src/yosys \
+    && git checkout "${YOSYS_COMMIT}" \
+    && git submodule update --init --recursive \
+    && make -j"$(nproc)" \
+    && make install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-yosys
+
+RUN git clone -b "${NEXTPNR_TAG}" https://github.com/YosysHQ/nextpnr /src/nextpnr \
+    && cd /src/nextpnr \
+    && git checkout "${NEXTPNR_COMMIT}" \
+    && git cherry-pick --no-commit "${NEXTPNR_SEED_FIX}" \
+    && sed -i \
+        '345i \ \ \ \ general.add_options()("exit-on-failed-target-frequency",' \
+        common/kernel/command.cc \
+    && sed -i \
+        '346i \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "exit if target frequency is not achieved (use together with "' \
+        common/kernel/command.cc \
+    && sed -i \
+        '347i \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ "--randomize-seed option)");' \
+        common/kernel/command.cc \
+    && sed -i \
+        '348i \\' \
+        common/kernel/command.cc \
+    && sed -i \
+        '662s/if (do_route) {/if (do_route \&\& (vm.count("exit-on-failed-target-frequency") ? !had_nonfatal_error : true)) {/' \
+        common/kernel/command.cc \
+    && sed -i \
+        '244s/bool warn_on_failure = false/bool warn_on_failure = true/' \
+        common/kernel/timing.h \
+    && cmake -DARCH=ice40 . \
+    && make -j"$(nproc)" \
+    && make install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-nextpnr
+
+RUN git clone -b "${IVERILOG_TAG}" --depth=1 https://github.com/steveicarus/iverilog /src/iverilog \
+    && cd /src/iverilog \
+    && git checkout "${IVERILOG_COMMIT}" \
+    && sh autoconf.sh \
+    && ./configure \
+    && make -j"$(nproc)" \
+    && make install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-iverilog
+
+RUN git clone -b "${VERILATOR_TAG}" --depth=1 https://github.com/verilator/verilator /src/verilator \
+    && cd /src/verilator \
+    && git checkout "${VERILATOR_COMMIT}" \
+    && autoconf \
+    && ./configure \
+    && make -j"$(nproc)" \
+    && make install \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-verilator
+
+RUN set -eu \
+    && mkdir -p /src \
+    && case "$(dpkg --print-architecture)" in \
+        amd64) printf 'arch=%s\nsha512=%s\n' x86_64 "${VERIBLE_SHA512_AMD64}" ;; \
+        arm64) printf 'arch=%s\nsha512=%s\n' arm64 "${VERIBLE_SHA512_ARM64}" ;; \
+        *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+    esac > /src/verible-release
+
+RUN set -eu \
+    && . /src/verible-release \
+    && curl -fsSL -o /src/verible.tar.gz \
+        "https://github.com/chipsalliance/verible/releases/download/${VERIBLE_TAG}/verible-${VERIBLE_TAG}-linux-static-${arch}.tar.gz" \
+    && echo "${sha512}  /src/verible.tar.gz" | sha512sum -c - \
+    && tar -xzf /src/verible.tar.gz -C /src \
+    && mv /src/verible-*/bin/* /usr/local/bin/ \
+    && verible-verilog-format --version | head -1 > /usr/local/repo-commit-verible
+
+RUN git clone -b "${COCOTB_TAG}" --depth=1 https://github.com/cocotb/cocotb /src/cocotb \
+    && cd /src/cocotb \
+    && pip install . --break-system-packages \
+    && pip install hkdf --break-system-packages \
+    && git describe --all --always --long --dirty > /usr/local/repo-commit-cocotb
+
+FROM base
+
+COPY --from=toolsbuilder /usr/local/ /usr/local/
+
+ENV PATH="${PATH}:/usr/lib/go-1.23/bin"
+
+LABEL org.opencontainers.image.description="Multi-arch toolchain for building the TKey FPGA bitstream"
+LABEL org.opencontainers.image.source=https://github.com/christoffercarlsson/containers

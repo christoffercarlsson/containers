@@ -42,6 +42,8 @@ jobs:
             path: src/rust
           - name: searxng
             path: src/searxng
+          - name: tkey-builder
+            path: src/tkey-builder
     uses: docker/github-builder/.github/workflows/build.yml@073833262a23a17675c95c4541ab063b7646756b
     with:
       output: image
