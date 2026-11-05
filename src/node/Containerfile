@@ -4,13 +4,6 @@ RUN npm install -g --allow-scripts=pnpm pnpm
 
 FROM ghcr.io/christoffercarlsson/debian:latest
 
-RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libatomic1 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN groupadd --gid 1000 node \
     && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 

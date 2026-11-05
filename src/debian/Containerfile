@@ -10,6 +10,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
+        libatomic1 \
         locales \
     && echo "${LOCALE} UTF-8" > /etc/locale.gen \
     && locale-gen \
