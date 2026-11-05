@@ -1,15 +1,22 @@
 FROM node:lts-trixie-slim AS builder
 
-RUN npm install -g pnpm
+RUN npm install -g --allow-scripts=pnpm pnpm
 
 FROM ghcr.io/christoffercarlsson/debian:latest
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libatomic1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 node \
     && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=builder /usr/local/bin /usr/local/bin
-RUN rm /usr/local/bin/yarn \
+RUN rm -f /usr/local/bin/yarn \
     /usr/local/bin/yarnpkg \
     /usr/local/bin/docker-entrypoint.sh \
     /usr/local/bin/nodejs
